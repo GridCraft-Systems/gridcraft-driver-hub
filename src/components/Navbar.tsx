@@ -25,7 +25,7 @@ const Navbar = () => {
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
             <Car className="w-6 h-6 text-primary" />
           </div>
-          <span className="font-display font-bold text-xl">GridCraft Solutions</span>
+          <span className="font-display font-bold text-xl">GridCraft Systems</span>
         </div>
 
         {/* Desktop Menu */}

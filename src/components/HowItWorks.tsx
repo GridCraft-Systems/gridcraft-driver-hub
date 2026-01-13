@@ -53,7 +53,7 @@ const HowItWorks = () => {
             How It <span className="gradient-text">Works</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Getting started with GridCraft is simple. Follow these four easy steps 
+            Getting started with GridCraft Systems is simple. Follow these four easy steps 
             to begin your journey towards driving success.
           </p>
         </motion.div>

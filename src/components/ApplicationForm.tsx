@@ -417,7 +417,7 @@ const ApplicationForm = () => {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium mb-3">
                   <CheckIndicator complete={isFieldComplete("whyJoin")} />
-                  Why would you like to join the GridCraft Solutions Rent-to-Own program?
+                  Why would you like to join the GridCraft Systems Rent-to-Own program?
                 </label>
                 <textarea
                   placeholder="Tell us about your goals and why you'd like to join our program..."

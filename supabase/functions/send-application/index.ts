@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailHtml = `
-      <h1>New Driver Application - GridCraft Solutions</h1>
+      <h1>New Driver Application - GridCraft Systems</h1>
       
       <h2>Driver Information</h2>
       <table style="border-collapse: collapse; width: 100%;">
@@ -109,16 +109,16 @@ const handler = async (req: Request): Promise<Response> => {
       </ul>
 
       <hr>
-      <p style="color: #666; font-size: 12px;">This application was submitted through the GridCraft Solutions website.</p>
+      <p style="color: #666; font-size: 12px;">This application was submitted through the GridCraft Systems website.</p>
     `;
 
     // Send email using Resend API directly
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     const emailPayload: any = {
-      from: "GridCraft Solutions <onboarding@resend.dev>",
+      from: "GridCraft Systems <onboarding@resend.dev>",
       to: ["info@gridcraftsystems.co.za"],
-      subject: "New Driver Application - GridCraft Solutions",
+      subject: "New Driver Application - GridCraft Systems",
       html: emailHtml,
     };
 

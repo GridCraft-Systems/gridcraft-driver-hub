@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
                 <Car className="w-6 h-6 text-primary" />
               </div>
-              <span className="font-display font-bold text-xl">GridCraft Solutions</span>
+              <span className="font-display font-bold text-xl">GridCraft Systems</span>
             </div>
             <p className="text-muted-foreground max-w-sm">
               Premium vehicle rentals for Uber and Bolt drivers. 
@@ -62,7 +62,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-white/10 pt-8 text-center text-muted-foreground text-sm">
-          <p>© {new Date().getFullYear()} GridCraft Solutions. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GridCraft Systems. All rights reserved.</p>
         </div>
       </div>
     </footer>
