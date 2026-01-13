@@ -3,7 +3,7 @@ import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { 
   Upload, Check, X, FileText, Image, AlertCircle, 
-  Star, Clock, Calendar, Camera 
+  Star, Camera 
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";

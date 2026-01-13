@@ -29,12 +29,38 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const applicationData: ApplicationRequest = await req.json();
+    console.log("[send-application] Received application data:", applicationData);
 
-    // Create Supabase client with service role for accessing storage
+    // Create Supabase client with service role for accessing storage and database
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Insert application data into the 'applications' table
+    const { data: insertedApplication, error: insertError } = await supabase
+      .from("applications")
+      .insert({
+        uber_bolt_rating: parseFloat(applicationData.rating),
+        trips_completed: parseInt(applicationData.trips),
+        years_experience: parseInt(applicationData.experience),
+        platform_profile_screenshot_url: applicationData.profileScreenshotPath,
+        security_deposit: applicationData.securityDeposit === "Yes",
+        rental_path: applicationData.rentalType,
+        safe_parking: applicationData.safeParking === "Yes",
+        why_join: applicationData.whyJoin,
+        id_document_url: applicationData.idDocumentPath,
+        drivers_license_prdp_url: `${applicationData.driversLicenseFrontPath},${applicationData.driversLicenseBackPath}`, // Combine front and back
+        proof_of_residence_url: applicationData.proofOfResidencePath,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("[send-application] Error inserting application into database:", insertError);
+      throw new Error(`Failed to save application to database: ${insertError.message}`);
+    }
+    console.log("[send-application] Application saved to database:", insertedApplication);
 
     // Download files from storage and convert to base64
     const attachments: { filename: string; content: string }[] = [];
@@ -61,12 +87,15 @@ const handler = async (req: Request): Promise<Response> => {
             filename: `${file.name}.${extension}`,
             content: base64,
           });
+        } else if (error) {
+          console.warn(`[send-application] Could not download file ${file.path}: ${error.message}`);
         }
       }
     }
 
     const emailHtml = `
       <h1>New Driver Application - GridCraft Systems</h1>
+      <p>Application ID: ${insertedApplication.id}</p>
       
       <h2>Driver Information</h2>
       <table style="border-collapse: collapse; width: 100%;">
@@ -118,7 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailPayload: any = {
       from: "GridCraft Systems <onboarding@resend.dev>",
       to: ["info@gridcraftsystems.co.za"],
-      subject: "New Driver Application - GridCraft Systems",
+      subject: `New Driver Application - GridCraft Systems (ID: ${insertedApplication.id})`,
       html: emailHtml,
     };
 
@@ -139,25 +168,30 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResult = await emailResponse.json();
 
     if (!emailResponse.ok) {
-      console.error("Resend API error:", emailResult);
+      console.error("[send-application] Resend API error:", emailResult);
       throw new Error(emailResult.message || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", emailResult);
+    console.log("[send-application] Email sent successfully:", emailResult);
 
     // Clean up uploaded files after sending
     for (const file of filesToDownload) {
       if (file.path) {
-        await supabase.storage.from("application-documents").remove([file.path]);
+        const { error: removeError } = await supabase.storage.from("application-documents").remove([file.path]);
+        if (removeError) {
+          console.warn(`[send-application] Failed to remove file ${file.path} from storage: ${removeError.message}`);
+        } else {
+          console.log(`[send-application] Successfully removed file ${file.path} from storage.`);
+        }
       }
     }
 
-    return new Response(JSON.stringify({ success: true, emailResult }), {
+    return new Response(JSON.stringify({ success: true, emailResult, applicationId: insertedApplication.id }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error in send-application function:", error);
+    console.error("[send-application] Error in send-application function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
