@@ -6,6 +6,7 @@ import {
   Star, Clock, Calendar, Camera 
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
   // Driver Info
@@ -79,6 +80,22 @@ const ApplicationForm = () => {
     return completed === total;
   };
 
+  const uploadFile = async (file: File, prefix: string): Promise<string> => {
+    const timestamp = Date.now();
+    const extension = file.name.split('.').pop();
+    const filePath = `${prefix}_${timestamp}.${extension}`;
+    
+    const { error } = await supabase.storage
+      .from("application-documents")
+      .upload(filePath, file);
+
+    if (error) {
+      throw new Error(`Failed to upload ${prefix}: ${error.message}`);
+    }
+
+    return filePath;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -89,12 +106,52 @@ const ApplicationForm = () => {
 
     setIsSubmitting(true);
     
-    // Simulate submission - in production, this would send to backend
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    toast.success("Application submitted successfully! We'll contact you within 24-48 hours.");
-    setFormData(initialFormData);
-    setIsSubmitting(false);
+    try {
+      // Upload all files
+      const uploadedFiles = {
+        profileScreenshotPath: formData.platformScreenshot 
+          ? await uploadFile(formData.platformScreenshot, "profile_screenshot") 
+          : "",
+        idDocumentPath: formData.idDocument 
+          ? await uploadFile(formData.idDocument, "id_document") 
+          : "",
+        driversLicenseFrontPath: formData.driversLicenseFront 
+          ? await uploadFile(formData.driversLicenseFront, "license_front") 
+          : "",
+        driversLicenseBackPath: formData.driversLicenseBack 
+          ? await uploadFile(formData.driversLicenseBack, "license_back") 
+          : "",
+        proofOfResidencePath: formData.proofOfResidence 
+          ? await uploadFile(formData.proofOfResidence, "proof_of_residence") 
+          : "",
+      };
+
+      // Call edge function to send email
+      const response = await supabase.functions.invoke("send-application", {
+        body: {
+          rating: formData.uberRating,
+          trips: formData.tripsCompleted,
+          experience: formData.yearsExperience,
+          securityDeposit: formData.canProvideDeposit,
+          rentalType: formData.rentalType,
+          safeParking: formData.hasParkingSpace,
+          whyJoin: formData.whyJoin,
+          ...uploadedFiles,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast.success("Application submitted successfully! We'll contact you within 24-48 hours.");
+      setFormData(initialFormData);
+    } catch (error: any) {
+      console.error("Submission error:", error);
+      toast.error(`Failed to submit application: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const FileUploadZone = ({ 
