@@ -6,7 +6,6 @@ import {
   Star, Camera 
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
   // Driver Info
@@ -80,20 +79,15 @@ const ApplicationForm = () => {
     return completed === total;
   };
 
+  // NOTE: File uploads are currently not handled by the frontend.
+  // You will need to implement a file storage solution (e.g., AWS S3, Cloudinary)
+  // and update this function to upload files and get their URLs.
   const uploadFile = async (file: File, prefix: string): Promise<string> => {
-    const timestamp = Date.now();
-    const extension = file.name.split('.').pop();
-    const filePath = `${prefix}_${timestamp}.${extension}`;
-    
-    const { error } = await supabase.storage
-      .from("application-documents")
-      .upload(filePath, file);
-
-    if (error) {
-      throw new Error(`Failed to upload ${prefix}: ${error.message}`);
-    }
-
-    return filePath;
+    // Placeholder for file upload logic.
+    // In a real application, you would upload the file to a storage service
+    // and return the public URL.
+    console.warn(`[ApplicationForm] File upload for ${prefix} is a placeholder. File: ${file.name}`);
+    return `placeholder-url/${prefix}/${file.name}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +101,7 @@ const ApplicationForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Upload all files
+      // Placeholder for file upload. In a real app, these would be actual URLs.
       const uploadedFiles = {
         profileScreenshotPath: formData.platformScreenshot 
           ? await uploadFile(formData.platformScreenshot, "profile_screenshot") 
@@ -126,9 +120,13 @@ const ApplicationForm = () => {
           : "",
       };
 
-      // Call edge function to send email
-      const response = await supabase.functions.invoke("send-application", {
-        body: {
+      // Send application data to the new backend API
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           rating: formData.uberRating,
           trips: formData.tripsCompleted,
           experience: formData.yearsExperience,
@@ -137,11 +135,13 @@ const ApplicationForm = () => {
           safeParking: formData.hasParkingSpace,
           whyJoin: formData.whyJoin,
           ...uploadedFiles,
-        },
+        }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to submit application to backend.");
       }
 
       toast.success("Application submitted successfully! We'll contact you within 24-48 hours.");
@@ -236,6 +236,9 @@ const ApplicationForm = () => {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Complete the application form below. Make sure to fill in all fields 
             and upload the required documents for a faster approval process.
+          </p>
+          <p className="text-sm text-yellow-500 mt-2">
+            Note: File uploads are currently placeholders. A separate file storage solution is needed.
           </p>
         </motion.div>
 
